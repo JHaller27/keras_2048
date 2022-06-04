@@ -1,3 +1,4 @@
+from enum import IntFlag
 from typing import Tuple
 
 from main import Board
@@ -5,10 +6,17 @@ import curses
 
 
 BOX_CHARS = ' ╵╷│╴┘┐┤╶└┌├─┴┬┼'
-UP =    0b0001
-DOWN =  0b0010
-LEFT =  0b0100
-RIGHT = 0b1000
+
+
+class BoxCharFlag(IntFlag):
+    NONE =  0
+    UP =    0b0001
+    DOWN =  0b0010
+    LEFT =  0b0100
+    RIGHT = 0b1000
+
+    def to_ch(self) -> str:
+        return BOX_CHARS[self]
 
 
 def _board_to_chars(board_coord: int, cell_size: int) -> int:
@@ -35,35 +43,35 @@ class _PainterView(IView):
 
         # Fill in borders
         for x_coord in range(self._out_width):
-            self.draw_at(0, x_coord, BOX_CHARS[LEFT | RIGHT])
-            self.draw_at(-1, x_coord, BOX_CHARS[LEFT | RIGHT])
+            self.draw_at(0, x_coord, (BoxCharFlag.LEFT | BoxCharFlag.RIGHT).to_ch())
+            self.draw_at(-1, x_coord, (BoxCharFlag.LEFT | BoxCharFlag.RIGHT).to_ch())
         for y_coord in range(self._out_height):
-            self.draw_at(y_coord, 0, BOX_CHARS[UP | DOWN])
-            self.draw_at(y_coord, -1, BOX_CHARS[UP | DOWN])
+            self.draw_at(y_coord, 0, (BoxCharFlag.UP | BoxCharFlag.DOWN).to_ch())
+            self.draw_at(y_coord, -1, (BoxCharFlag.UP | BoxCharFlag.DOWN).to_ch())
 
         # Draw corners
-        for x_coord, x_char in [(0, RIGHT), (-1, LEFT)]:
-            for y_coord, y_char in [(0, DOWN), (-1, UP)]:
+        for x_coord, x_char in [(0, BoxCharFlag.RIGHT), (-1, BoxCharFlag.LEFT)]:
+            for y_coord, y_char in [(0, BoxCharFlag.DOWN), (-1, BoxCharFlag.UP)]:
                 self.draw_at(y_coord, x_coord, BOX_CHARS[x_char | y_char])
 
         # Fill in internal grid-lines
         for y_coord in range(0, self._out_height):
             for x_coord in range(0, self._out_width):
-                box_idx = 0
+                box_char: BoxCharFlag = BoxCharFlag.NONE
                 if y_coord % self._cell_height == 0:
                     if x_coord != 0:
-                        box_idx |= LEFT
+                        box_char |= BoxCharFlag.LEFT
                     if x_coord != self._out_width-1:
-                        box_idx |= RIGHT
+                        box_char |= BoxCharFlag.RIGHT
                 if x_coord % self._cell_width == 0:
                     if y_coord != 0:
-                        box_idx |= UP
+                        box_char |= BoxCharFlag.UP
                     if y_coord != self._out_height-1:
-                        box_idx |= DOWN
-                self.draw_at(y_coord, x_coord, BOX_CHARS[box_idx])
+                        box_char |= BoxCharFlag.DOWN
+                self.draw_at(y_coord, x_coord, box_char.to_ch())
 
         # Fill values
-        val_alphabet = '0123456789' + ''.join([chr(x) for x in range(ord('A'), ord('Z')+1)])
+        val_alphabet = ' 123456789' + ''.join([chr(x) for x in range(ord('A'), ord('Z')+1)])
 
         for pos, val in board:
             self.draw_at(_board_to_chars(pos.row, self._cell_height), _board_to_chars(pos.col, self._cell_width), val_alphabet[val])
