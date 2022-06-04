@@ -112,15 +112,17 @@ class Board:
         # If slide has happened, start cell must now be empty
         self[from_pos] = 0
 
-    def _try_slide_one(self, from_pos: Position, next_pos_fn: Callable[[Position], Position]) -> None:
+    def _try_slide_one(self, from_pos: Position, next_pos_fn: Callable[[Position], Position]) -> bool:
         to_pos = self._find_furthest_position(from_pos, next_pos_fn)
 
         if to_pos is None:
-            return
+            return False
 
         self._slide_one(from_pos, to_pos)
+        return True
 
-    def _slide_all(self, cell_chunks: Iterable[list[int]], mk_pos: Callable[[int, int], Position], reverse: bool, next_fn: Callable[[Position], Position]) -> None:
+    def _slide_all(self, cell_chunks: Iterable[list[int]], mk_pos: Callable[[int, int], Position], reverse: bool, next_fn: Callable[[Position], Position]) -> bool:
+        some_slide = False
         for coord_1, chunk in enumerate(cell_chunks):
             val_itr = enumerate(chunk)
             if reverse:
@@ -130,19 +132,23 @@ class Board:
                 if val == 0:
                     continue
                 from_pos = mk_pos(coord_1, coord_2)
-                self._try_slide_one(from_pos, next_fn)
 
-    def slide_left(self) -> None:
-        self._slide_all(self._rows(), lambda y, x: Position(x, y), False, lambda p: p.left)
+                slid = self._try_slide_one(from_pos, next_fn)
+                some_slide = some_slide or slid
 
-    def slide_right(self) -> None:
-        self._slide_all(self._rows(), lambda y, x: Position(x, y), True, lambda p: p.right)
+        return some_slide
 
-    def slide_up(self) -> None:
-        self._slide_all(self._columns(), lambda x, y: Position(x, y), False, lambda p: p.up)
+    def slide_left(self) -> bool:
+        return self._slide_all(self._rows(), lambda y, x: Position(x, y), False, lambda p: p.left)
 
-    def slide_down(self) -> None:
-        self._slide_all(self._columns(), lambda x, y: Position(x, y), True, lambda p: p.down)
+    def slide_right(self) -> bool:
+        return self._slide_all(self._rows(), lambda y, x: Position(x, y), True, lambda p: p.right)
+
+    def slide_up(self) -> bool:
+        return self._slide_all(self._columns(), lambda x, y: Position(x, y), False, lambda p: p.up)
+
+    def slide_down(self) -> bool:
+        return self._slide_all(self._columns(), lambda x, y: Position(x, y), True, lambda p: p.down)
 
     def get_max_value(self) -> int:
         return max([val for row in self._cells for val in row])

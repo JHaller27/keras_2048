@@ -13,21 +13,23 @@ def main(view: debug_views.IView, board: Board, seed = None):
         view.draw(board)
         cmd = view.get_command()
 
+        slid = False
         if cmd == debug_views.Command.MV_UP:
-            board.slide_up()
+            slid = board.slide_up()
         elif cmd == debug_views.Command.MV_DOWN:
-            board.slide_down()
+            slid = board.slide_down()
         elif cmd == debug_views.Command.MV_LEFT:
-            board.slide_left()
+            slid = board.slide_left()
         elif cmd == debug_views.Command.MV_RIGHT:
-            board.slide_right()
+            slid = board.slide_right()
         elif cmd == debug_views.Command.EXIT:
             break
 
         # Insert random cell
-        empty_pos = random.choice(board.get_empty_positions())
-        val = random.choices([1, 2], weights=[0.9, 0.1], k=1)[0]
-        board[empty_pos] = val
+        if slid:
+            empty_pos = random.choice(board.get_empty_positions())
+            val = random.choices([1, 2], weights=[0.9, 0.1], k=1)[0]
+            board[empty_pos] = val
 
 
 
