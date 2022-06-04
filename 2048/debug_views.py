@@ -137,6 +137,8 @@ class PTUIView(_PainterView):
 class CursesView(_PainterView):
     def __init__(self, scr: curses.window, cell_size: Tuple[int, int], board_size: Tuple[int, int]):
         self._scr = scr
+        curses.noecho()
+        curses.curs_set(0)
 
         cell_width, cell_height = cell_size
         board_width, board_height = board_size
@@ -148,7 +150,7 @@ class CursesView(_PainterView):
 
     def draw_at(self, y: int, x: int, s: str) -> None:
         if y < 0:
-            y = self._out_width + y
+            y = self._out_height + y
         if x < 0:
             x = self._out_width + x
         self._scr.addch(y, x, s)
