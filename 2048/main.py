@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Iterator, Tuple
+from typing import Iterator, Iterable, Callable, Optional
 
 
 @dataclass
@@ -70,107 +70,76 @@ class Board:
     def size(self) -> Position:
         return Position(self._width, self._height)
 
+    def _rows(self) -> list[list[int]]:
+        return [list(row) for row in self._cells]
+
+    def _columns(self) -> list[list[int]]:
+        return [[row[x] for row in self._cells] for x in range(self._width)]
+
     def _can_merge(self, pos_1: Position, pos_2: Position) -> bool:
         return self[pos_1] == self[pos_2]
 
-    def _slide(self, from_pos: Position, to_pos: Position) -> None:
+    def _find_furthest_position(self, from_pos: Position, next_pos_fn: Callable[[Position], Position]) -> Optional[Position]:
+        # Loop over each "next" cell, stop when "next" is invalid and use to_pos
+        to_pos = from_pos.copy()
+        next_pos = next_pos_fn(to_pos)
+        while next_pos.in_bounds(0, 0, self._height, self._width) and self[next_pos] == 0:
+            to_pos, next_pos = next_pos, next_pos_fn(next_pos)
+
+        # If next_pos is in bounds, ie not empty, and has the same value as from_pos, set it as to_pos
+        if next_pos.in_bounds(0, 0, self._height, self._width) and self[next_pos] == self[from_pos]:
+            to_pos = next_pos
+
+        # Stop if start & end are the same
+        if from_pos == to_pos:
+            return None
+
+        return to_pos
+
+    def _slide_one(self, from_pos: Position, to_pos: Position) -> None:
+        # If will slide to cell with same value, increment value at destination
         if self[from_pos] == self[to_pos]:
             self[to_pos] += 1
+
+        # If values are not the same, and dest is not empty, this is an error (this should never happen)
         elif self[to_pos] != 0:
             raise RuntimeError(f'Cannot slide value to non-empty, non-matching cell at {to_pos}')
+
+        # If will slide to empty cell, set dest value to start cell value
         else:
             self[to_pos] = self[from_pos]
 
+        # If slide has happened, start cell must now be empty
         self[from_pos] = 0
 
-    def slide_left(self) -> None:
-        for y_coord, row in enumerate(self._cells):
-            for x_coord, val in enumerate(row):
+    def _try_slide_one(self, from_pos: Position, next_pos_fn: Callable[[Position], Position]) -> None:
+        to_pos = self._find_furthest_position(from_pos, next_pos_fn)
+
+        if to_pos is None:
+            return
+
+        self._slide_one(from_pos, to_pos)
+
+    def _slide_all(self, cell_chunks: Iterable[list[int]], mk_pos: Callable[[int, int], Position], reverse: bool, next_fn: Callable[[Position], Position]) -> None:
+        for coord_1, chunk in enumerate(cell_chunks):
+            val_itr = enumerate(chunk)
+            if reverse:
+                val_itr = reversed(list(val_itr))
+            for coord_2, val in val_itr:
                 # Don't slide empty cells
                 if val == 0:
                     continue
+                from_pos = mk_pos(coord_1, coord_2)
+                self._try_slide_one(from_pos, next_fn)
 
-                # Find left-most slide-able position
-                start_pos = Position(x_coord, y_coord)
-                curr_pos = start_pos.copy()
-                next_pos = curr_pos.left
-                while next_pos.in_bounds(0, 0, self._height, self._width) and self[next_pos] == 0:
-                    curr_pos, next_pos = next_pos, next_pos.left
-
-                # If next_pos is in bounds, ie not empty, and has the same value as start_pos, set it as curr_pos
-                if next_pos.in_bounds(0, 0, self._height, self._width) and self[next_pos] == self[start_pos]:
-                    curr_pos = next_pos
-
-                # Slide from start to curr
-                if start_pos != curr_pos:
-                    self._slide(start_pos, curr_pos)
+    def slide_left(self) -> None:
+        self._slide_all(self._rows(), lambda y, x: Position(x, y), False, lambda p: p.left)
 
     def slide_right(self) -> None:
-        for y_coord, row in enumerate(self._cells):
-            for x_coord, val in reversed(list(enumerate(row))):
-                # Don't slide empty cells
-                if val == 0:
-                    continue
-
-                # Find right-most slide-able position
-                start_pos = Position(x_coord, y_coord)
-                curr_pos = start_pos.copy()
-                next_pos = curr_pos.right
-                while next_pos.in_bounds(0, 0, self._height, self._width) and self[next_pos] == 0:
-                    curr_pos, next_pos = next_pos, next_pos.right
-
-                # If next_pos is in bounds, ie not empty, and has the same value as start_pos, set it as curr_pos
-                if next_pos.in_bounds(0, 0, self._height, self._width) and self[next_pos] == self[start_pos]:
-                    curr_pos = next_pos
-
-                # Slide from start to curr
-                if start_pos != curr_pos:
-                    self._slide(start_pos, curr_pos)
+        self._slide_all(self._rows(), lambda y, x: Position(x, y), True, lambda p: p.right)
 
     def slide_up(self) -> None:
-        for x_coord in range(self._width):
-            col = [self._cells[r][x_coord] for r in range(self._height)]
-
-            for y_coord, val in enumerate(col):
-                # Don't slide empty cells
-                if val == 0:
-                    continue
-
-                # Find right-most slide-able position
-                start_pos = Position(x_coord, y_coord)
-                curr_pos = start_pos.copy()
-                next_pos = curr_pos.up
-                while next_pos.in_bounds(0, 0, self._height, self._width) and self[next_pos] == 0:
-                    curr_pos, next_pos = next_pos, next_pos.up
-
-                # If next_pos is in bounds, ie not empty, and has the same value as start_pos, set it as curr_pos
-                if next_pos.in_bounds(0, 0, self._height, self._width) and self[next_pos] == self[start_pos]:
-                    curr_pos = next_pos
-
-                # Slide from start to curr
-                if start_pos != curr_pos:
-                    self._slide(start_pos, curr_pos)
+        self._slide_all(self._columns(), lambda x, y: Position(x, y), False, lambda p: p.up)
 
     def slide_down(self) -> None:
-        for x_coord in range(self._width):
-            col = [self._cells[r][x_coord] for r in range(self._height)]
-
-            for y_coord, val in reversed(list(enumerate(col))):
-                # Don't slide empty cells
-                if val == 0:
-                    continue
-
-                # Find right-most slide-able position
-                start_pos = Position(x_coord, y_coord)
-                curr_pos = start_pos.copy()
-                next_pos = curr_pos.down
-                while next_pos.in_bounds(0, 0, self._height, self._width) and self[next_pos] == 0:
-                    curr_pos, next_pos = next_pos, next_pos.down
-
-                # If next_pos is in bounds, ie not empty, and has the same value as start_pos, set it as curr_pos
-                if next_pos.in_bounds(0, 0, self._height, self._width) and self[next_pos] == self[start_pos]:
-                    curr_pos = next_pos
-
-                # Slide from start to curr
-                if start_pos != curr_pos:
-                    self._slide(start_pos, curr_pos)
+        self._slide_all(self._columns(), lambda x, y: Position(x, y), True, lambda p: p.down)
