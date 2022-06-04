@@ -4,16 +4,21 @@ import debug_views
 
 def main(view: debug_views.IView, board: Board):
     board[Position(2, 2)] = 1
-    view.draw(board)
 
-    board.slide_up()
-    view.draw(board)
+    while True:
+        view.draw(board)
+        cmd = view.get_command()
 
-    board[Position(2, 1)] = 1
-    view.draw(board)
-
-    board.slide_up()
-    view.draw(board)
+        if cmd == debug_views.Command.MV_UP:
+            board.slide_up()
+        elif cmd == debug_views.Command.MV_DOWN:
+            board.slide_down()
+        elif cmd == debug_views.Command.MV_LEFT:
+            board.slide_left()
+        elif cmd == debug_views.Command.MV_RIGHT:
+            board.slide_right()
+        elif cmd == debug_views.Command.EXIT:
+            return
 
 
 if __name__ == '__main__':

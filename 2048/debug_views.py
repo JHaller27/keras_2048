@@ -1,4 +1,4 @@
-from enum import IntFlag
+from enum import IntFlag, Enum, auto
 from typing import Tuple
 
 from main import Board
@@ -19,6 +19,15 @@ class BoxCharFlag(IntFlag):
         return BOX_CHARS[self]
 
 
+class Command(Enum):
+    EXIT = auto()
+    MV_UP = auto()
+    MV_DOWN = auto()
+    MV_LEFT = auto()
+    MV_RIGHT = auto()
+    ERR = auto()
+
+
 def _board_to_chars(board_coord: int, cell_size: int) -> int:
     return cell_size * board_coord + (cell_size // 2)
 
@@ -28,6 +37,9 @@ class IView:
         raise NotImplementedError
 
     def clear(self) -> None:
+        raise NotImplementedError
+
+    def get_command(self) -> Command:
         raise NotImplementedError
 
 
@@ -82,6 +94,9 @@ class _PainterView(IView):
     def draw_at(self, y: int, x: int, s: str) -> None:
         raise NotImplementedError
 
+    def get_command(self) -> Command:
+        raise NotImplementedError
+
 
 class PTUIView(_PainterView):
     def __init__(self, cell_size: Tuple[int, int], board_size: Tuple[int, int]):
@@ -102,6 +117,21 @@ class PTUIView(_PainterView):
     def draw(self, board: Board) -> None:
         super().draw(board)
         print('\n'.join([''.join([cell for cell in row]) for row in self._out_chars]))
+
+    def get_command(self) -> Command:
+        cmd = input('CMD (wasd|q)> ').lower()
+        if cmd == 'w':
+            return Command.MV_UP
+        elif cmd == 's':
+            return Command.MV_DOWN
+        elif cmd == 'a':
+            return Command.MV_LEFT
+        elif cmd == 'd':
+            return Command.MV_RIGHT
+        elif cmd == 'q':
+            return Command.EXIT
+        else:
+            return Command.ERR
 
 
 class CursesView(_PainterView):
@@ -125,4 +155,18 @@ class CursesView(_PainterView):
 
     def draw(self, board: Board) -> None:
         super().draw(board)
-        self._scr.getch()
+
+    def get_command(self) -> Command:
+        cmd = self._scr.getch()
+        if cmd == curses.KEY_UP:
+            return Command.MV_UP
+        elif cmd == curses.KEY_DOWN:
+            return Command.MV_DOWN
+        elif cmd == curses.KEY_LEFT:
+            return Command.MV_LEFT
+        elif cmd == curses.KEY_RIGHT:
+            return Command.MV_RIGHT
+        elif cmd == ord('q'):
+            return Command.EXIT
+        else:
+            return Command.ERR
