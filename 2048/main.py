@@ -143,3 +143,9 @@ class Board:
 
     def slide_down(self) -> None:
         self._slide_all(self._columns(), lambda x, y: Position(x, y), True, lambda p: p.down)
+
+    def get_max_value(self) -> int:
+        return max([val for row in self._cells for val in row])
+
+    def get_empty_positions(self) -> list[Position]:
+        return [pos for pos, val in iter(self) if val == 0]
