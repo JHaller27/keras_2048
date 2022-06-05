@@ -1,41 +1,35 @@
 import random
 
-from board import Board, Position
+from game import Game
+from board import Board
 import views
 
 
-
-def main(view: views.IView, board: Board, seed = None):
+def main(game: Game, seed=None):
     if seed is not None:
         random.seed(seed)
 
     # Set slid to True for initial random placement
     slid = True
-    while board.get_max_value() < 11:
+    while not game.is_game_over():
         # Insert random cell
         if slid:
-            empty_pos = random.choice(board.get_empty_positions())
-            val = random.choices([1, 2], weights=[0.9, 0.1], k=1)[0]
-            board[empty_pos] = val
+            game.add_random_val()
 
-            # Reset slid
-            slid = False
-
-        view.draw(board)
-        cmd = view.get_command()
+        game.display_board()
+        cmd = game.get_command()
 
         slid = False
         if cmd == views.Command.MV_UP:
-            slid = board.slide_up()
+            slid = game.slide_up()
         elif cmd == views.Command.MV_DOWN:
-            slid = board.slide_down()
+            slid = game.slide_down()
         elif cmd == views.Command.MV_LEFT:
-            slid = board.slide_left()
+            slid = game.slide_left()
         elif cmd == views.Command.MV_RIGHT:
-            slid = board.slide_right()
+            slid = game.slide_right()
         elif cmd == views.Command.EXIT:
             break
-
 
 
 if __name__ == '__main__':
@@ -50,7 +44,7 @@ if __name__ == '__main__':
 
     if args.curses:
         import curses
-        curses.wrapper(lambda scr: main(views.CursesView(scr, (4, 2), (board.size.col, board.size.row)), board, args.seed))
+        curses.wrapper(lambda scr: main(Game(board, views.CursesView(scr, (4, 2), (board.size.col, board.size.row)), 11), args.seed))
 
     else:
-        main(views.PTUIView((4, 2), (board.size.col, board.size.row)), board, args.seed)
+        main(Game(board, views.PTUIView((4, 2), (board.size.col, board.size.row)), 11), args.seed)
