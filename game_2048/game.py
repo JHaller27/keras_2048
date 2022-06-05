@@ -2,8 +2,8 @@ import random
 
 from typing import Iterable, Callable, Optional
 
-from board import Board, Position
-from views import IView, Command
+from .board import Board, Position
+from .view import IView, Command
 
 
 class Game:

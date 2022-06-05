@@ -1,7 +1,7 @@
-from enum import IntFlag, Enum, auto
+from enum import IntFlag
 from typing import Tuple
 
-from board import Board
+from game_2048 import Board, Command, IView
 import curses
 
 
@@ -19,28 +19,8 @@ class BoxCharFlag(IntFlag):
         return BOX_CHARS[self]
 
 
-class Command(Enum):
-    EXIT = auto()
-    MV_UP = auto()
-    MV_DOWN = auto()
-    MV_LEFT = auto()
-    MV_RIGHT = auto()
-    ERR = auto()
-
-
 def _board_to_chars(board_coord: int, cell_size: int) -> int:
     return cell_size * board_coord + (cell_size // 2)
-
-
-class IView:
-    def draw(self, board: Board) -> None:
-        raise NotImplementedError
-
-    def clear(self) -> None:
-        raise NotImplementedError
-
-    def get_command(self) -> Command:
-        raise NotImplementedError
 
 
 class _PainterView(IView):

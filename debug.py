@@ -1,5 +1,4 @@
-from game import Game
-from board import Board, Position
+from game_2048 import Game, Board, Position
 import views
 
 

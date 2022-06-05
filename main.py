@@ -1,11 +1,10 @@
 import random
 
-from game import Game
-from board import Board
+import game_2048
 import views
 
 
-def main(game: Game, seed=None):
+def main(game: game_2048.Game, seed=None):
     if seed is not None:
         random.seed(seed)
 
@@ -40,11 +39,11 @@ if __name__ == '__main__':
     parser.add_argument("--seed", "-s")
     args = parser.parse_args()
 
-    board = Board(4, 4)
+    board = game_2048.Board(4, 4)
 
     if args.curses:
         import curses
-        curses.wrapper(lambda scr: main(Game(board, views.CursesView(scr, (4, 2), (board.size.col, board.size.row)), 11), args.seed))
+        curses.wrapper(lambda scr: main(game_2048.Game(board, views.CursesView(scr, (4, 2), (board.size.col, board.size.row)), 11), args.seed))
 
     else:
-        main(Game(board, views.PTUIView((4, 2), (board.size.col, board.size.row)), 11), args.seed)
+        main(game_2048.Game(board, views.PTUIView((4, 2), (board.size.col, board.size.row)), 11), args.seed)
