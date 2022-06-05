@@ -15,6 +15,9 @@ class Position:
             return False
         return self.col == other.col and self.row == other.row
 
+    def __hash__(self) -> int:
+        return hash((self.col, self.row))
+
     def copy(self) -> 'Position':
         return Position(self.col, self.row)
 
@@ -51,6 +54,8 @@ class Board:
 
         self._cells = [[0] * self._width for _ in range(self._height)]
 
+        self._merges: set[Position] = set()
+
     def __getitem__(self, item: Position) -> int:
         if not isinstance(item, Position):
             raise TypeError(f"Cannot index Board with index of type {type(item)}")
@@ -86,8 +91,8 @@ class Board:
         while next_pos.in_bounds(0, 0, self._height, self._width) and self[next_pos] == 0:
             to_pos, next_pos = next_pos, next_pos_fn(next_pos)
 
-        # If next_pos is in bounds, ie not empty, and has the same value as from_pos, set it as to_pos
-        if next_pos.in_bounds(0, 0, self._height, self._width) and self[next_pos] == self[from_pos]:
+        # Check for possible merge
+        if next_pos.in_bounds(0, 0, self._height, self._width) and self[next_pos] == self[from_pos] and next_pos not in self._merges:
             to_pos = next_pos
 
         # Stop if start & end are the same
@@ -100,6 +105,7 @@ class Board:
         # If will slide to cell with same value, increment value at destination
         if self[from_pos] == self[to_pos]:
             self[to_pos] += 1
+            self._merges.add(to_pos)
 
         # If values are not the same, and dest is not empty, this is an error (this should never happen)
         elif self[to_pos] != 0:
@@ -122,6 +128,8 @@ class Board:
         return True
 
     def _slide_all(self, cell_chunks: Iterable[list[int]], mk_pos: Callable[[int, int], Position], reverse: bool, next_fn: Callable[[Position], Position]) -> bool:
+        self._merges.clear()
+
         some_slide = False
         for coord_1, chunk in enumerate(cell_chunks):
             val_itr = enumerate(chunk)

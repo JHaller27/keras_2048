@@ -3,7 +3,28 @@ import views
 
 
 def main(view: views.IView, board: Board):
-    pass
+    # board[Position(2, 0)] = 2
+    board[Position(2, 1)] = 2
+    board[Position(2, 2)] = 1
+    board[Position(2, 3)] = 1
+
+    def _slide():
+        board.slide_down()
+
+    view.draw(board)
+    view.get_command()
+
+    _slide()
+    view.draw(board)
+    view.get_command()
+
+    _slide()
+    view.draw(board)
+    view.get_command()
+
+    _slide()
+    view.draw(board)
+    view.get_command()
 
 
 if __name__ == '__main__':
@@ -17,7 +38,7 @@ if __name__ == '__main__':
 
     if args.curses:
         import curses
-        curses.wrapper(lambda scr: main(views.CursesView(scr, (4, 2), (board.size.col, board.size.row)), board, args.seed))
+        curses.wrapper(lambda scr: main(views.CursesView(scr, (4, 2), (board.size.col, board.size.row)), board))
 
     else:
         main(views.PTUIView((4, 2), (board.size.col, board.size.row)), board, args.seed)
