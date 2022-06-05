@@ -1,7 +1,7 @@
 from enum import IntFlag, Enum, auto
 from typing import Tuple
 
-from main import Board
+from board import Board
 import curses
 
 
